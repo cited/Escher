@@ -49,7 +49,7 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController {
         
         $pName = str_replace('-', '', $m[1]);
         if (file_exists($pluginDir . '../' . $pName)){
-            header("location:" . url("escher?error=1&msg=Plugin Directrory already exists.")); exit;
+            header("location:" . url("escher?error=1&msg=Plugin directory already exists.")); exit;
         }
 
         // create empty zip file.
