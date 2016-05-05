@@ -1,7 +1,7 @@
 
 #Escher
 
-## Install Omeka Plugins from within Omeka
+Install Omeka Plugins from within Omeka
 
 ## Installation
 
