@@ -11,6 +11,7 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController {
 
         $html = file_get_contents("http://omeka.org/add-ons/plugins/");
         //echo $html;
+        libxml_use_internal_errors(true);
         $pokemon_doc = new DOMDocument();
         $pokemon_doc->loadHTML($html);
 
