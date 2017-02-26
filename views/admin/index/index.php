@@ -28,26 +28,28 @@ echo head(array(
     <img src="<?php echo img('escher-logo.gif'); ?>" />
 </div>
 
-<?php if (!empty($_GET['success'])): ?>
-<p class="escher-success"><?php echo $_GET['msg']; ?></p>
-<?php elseif (!empty($_GET['error'])): ?>
-<p class="escher-error"><?php echo $_GET['msg']; ?></p>
+<?php if ($status == 'success'): ?>
+<p class="escher-success"><?php echo $this->message; ?></p>
+<?php elseif ($status == 'error'): ?>
+<p class="escher-error"><?php echo $this->message; ?></p>
 <?php endif; ?>
 
 <p><?php echo __('Select Plugin and Click Upload'); ?></p>
 
-<form action="<?php echo url("escher/index/upload"); ?>" method="post">
+<form action="<?php echo url("escher"); ?>" method="post">
     <div class="field">
         <div class="two columns alpha">
-            <?php echo $this->formLabel('plugin-name', __('Plugin Name')); ?>
+            <?php echo $this->formLabel('addon', __('Plugin Name')); ?>
         </div>
         <div class='inputs five columns omega'>
             <?php
                 $plugins = label_table_options($plugins);
-                echo $this->formSelect('plugin-name', '', array(), $plugins);
+                echo $this->formSelect('addon', '', array(), $plugins);
             ?>
         </div>
     </div>
+
+    <?php echo $csrf; ?>
 
     <input type="submit" value="<?php echo __('Upload'); ?>" />
 </form>
