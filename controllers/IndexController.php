@@ -3,6 +3,8 @@
 class Escher_IndexController extends Omeka_Controller_AbstractActionController
 {
 
+    protected $_webplugins = array();
+
     public function indexAction()
     {
         $csrf = new Omeka_Form_SessionCsrf;
@@ -11,14 +13,23 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         $this->view->status = '';
         $this->view->message = '';
 
-        $plugins = $this->_listAddons('plugin');
-        $this->view->plugins = $plugins;
+        $types = array(
+            'plugin',
+            'theme',
+            'webplugin',
+        );
 
-        $themes = $this->_listAddons('theme');
-        $this->view->themes = $themes;
+        $result = false;
+        foreach ($types as $type) {
+            $addons = $this->_listAddons($type);
+            $addonsName = Inflector::pluralize($type);
+            // TODO Check if installed.
+            $this->view->$addonsName = $addons;
+            $result = $result || !empty($addons);
+        }
 
-        if (empty($plugins) && empty($themes)) {
-            $this->_helper->_flashMessenger(__('Unable to fetch addons from Omeka.org.'), 'error');
+        if (empty($result)) {
+            $this->_helper->_flashMessenger(__('Unable to fetch addons.'), 'error');
             return;
         }
 
@@ -32,15 +43,12 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             return;
         }
 
-        $type = 'plugin';
-        $url = $this->getParam('plugin');
-        if (!$url) {
-            $type = 'theme';
-            $url = $this->getParam('theme');
-        }
-
-        if ($url) {
-            $result = $this->_installAddon($url, $type);
+        foreach ($types as $type) {
+            $url = $this->getParam($type);
+            if ($url) {
+                $result = $this->_installAddon($url, $type);
+                break;
+            }
         }
     }
 
@@ -52,8 +60,6 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
      */
     protected function _listAddons($type)
     {
-        $addons = array();
-
         switch ($type) {
             case 'plugin':
                 $source = 'https://omeka.org/add-ons/plugins/';
@@ -61,14 +67,36 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             case 'theme':
                 $source = 'https://omeka.org/add-ons/themes/';
                 break;
+            case 'webplugin':
+                $source = 'https://raw.githubusercontent.com/Daniel-KM/UpgradeToOmekaS/master/docs/_data/omeka_plugins.csv';
+                break;
             default:
                 return array();
         }
 
-        $html = file_get_contents($source);
-        if (empty($html)) {
+        $content = file_get_contents($source);
+        if (empty($content)) {
             return array();
         }
+
+        switch ($type) {
+            case 'plugin':
+            case 'theme':
+                return $this->_listFromOmeka($content);
+            case 'webplugin':
+                return $this->_listFromWeb($content);
+        }
+    }
+
+    /**
+     * Helper to parse a page from omeka.org to get urls and names of addons.
+     *
+     * @param string $html
+     * @return array
+     */
+    protected function _listFromOmeka($html)
+    {
+        $addons = array();
 
         libxml_use_internal_errors(true);
         $pokemon_doc = new DOMDocument();
@@ -86,6 +114,47 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
                 $name = str_replace('-', ' ', $name);
                 $addons[$url] = $name . ' [v' . $version . ']';
             }
+        }
+
+        return $addons;
+    }
+
+    /**
+     * Helper to parse a csv file to get urls and names of addons.
+     *
+     * @param string $csv
+     * @return array
+     */
+    protected function _listFromWeb($csv)
+    {
+        $addons = array();
+
+        $this->_webplugins = array_map('str_getcsv', explode("\n", $csv));
+        $list = &$this->_webplugins;
+        $headers = array_flip($list[0]);
+
+        foreach ($list as $key => $row) {
+            if ($key == 0 || empty($row) || !isset($row[$headers['Url']])) {
+                continue;
+            }
+            $url = $row[$headers['Url']];
+            $name = $row[$headers['Name']];
+            $version = $row[$headers['Last']];
+
+            $server = strtolower(parse_url($url, PHP_URL_HOST));
+            switch ($server) {
+                case 'github.com':
+                    $url .= '/archive/master.zip';
+                    break;
+                case 'gitlab.com':
+                    $url .= '/repository/archive.zip';
+                    break;
+                default:
+                    $url .= '/master.zip';
+                    break;
+            }
+
+            $addons[$url] = $name . ' [v' . $version . ']';
         }
 
         return $addons;
@@ -114,6 +183,48 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
     }
 
     /**
+     * Helper to extract the true addon name from the list.
+     *
+     * @param string $url
+     * @return array
+     */
+    protected function _extractAddonName($url)
+    {
+        $addonName = '';
+
+        $filepath = parse_url($url, PHP_URL_PATH);
+        $server = strtolower(parse_url($url, PHP_URL_HOST));
+        switch ($server) {
+            case 'github.com':
+            case 'gitlab.com':
+                $pluginUrl = dirname(dirname($url));
+                break;
+            default:
+                $pluginUrl = dirname($url);
+                break;
+        }
+
+        $list = &$this->_webplugins;
+        $headers = array_flip($list[0]);
+
+        $name = '';
+        foreach ($list as $key => $row) {
+            if ($key == 0 || empty($row) || !isset($row[$headers['Url']])) {
+                continue;
+            }
+            if ($pluginUrl == $row[$headers['Url']]) {
+                $name = $row[$headers['Name']];
+                break;
+            }
+        }
+
+        if ($name) {
+            $addonName = Inflector::camelize($name);
+        }
+        return $addonName;
+    }
+
+    /**
      * Helper to install an addon.
      *
      * @param string $source
@@ -122,7 +233,12 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
      */
     protected function _installAddon($source, $type)
     {
+        $from = $type;
+
         switch ($type) {
+            case 'webplugin':
+                $type = 'plugin';
+                // No break.
             case 'plugin':
                 $destination = PLUGIN_DIR;
                 break;
@@ -155,10 +271,23 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             }
         }
 
-        // Get plugin directory name without version number.
-        list($name, $version) = $this->_extractNameAndVersion($filename);
-        $directory = Inflector::camelize($name);
-        if (file_exists($destination . DIRECTORY_SEPARATOR . $directory)) {
+        // Check if the name of the plugins exists in the list.
+        if ($from == 'webplugin') {
+            $addonName = $this->_extractAddonName($source);
+        }
+        // Else, get plugin directory name without version number.
+        else {
+            list($name, $version) = $this->_extractNameAndVersion($filename);
+            $addonName = Inflector::camelize($name);
+        }
+
+        if (empty($addonName)) {
+            $this->view->status = 'error';
+            $this->view->message = __('The name of the %s cannot be determined.', $type);
+            return false;
+        }
+
+        if (file_exists($destination . DIRECTORY_SEPARATOR . $addonName)) {
             $this->view->status = 'error';
             $this->view->message = __('The addon directory already exists.');
             return false;
@@ -168,7 +297,7 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         $result = $this->_downloadFile($source, $zipFile);
         if (!$result) {
             $this->view->status = 'error';
-            $this->view->message = __('Unable to fetch the %s.', $type);
+            $this->view->message = __('Unable to fetch the %s "%s".', $type, $addonName);
             return false;
         }
 
@@ -178,10 +307,23 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         unlink($zipFile);
 
         if ($result) {
+            $msg = __('If "%s" doesn’t appear in the list of %s, its directory may need to be renamed.',
+                Inflector::humanize(Inflector::underscore($addonName), 'all'), Inflector::pluralize($type));
+            if ($from == 'webplugin') {
+                $result = $this->_moveAddon($addonName, $type);
+                if ($result) {
+                    $this->_helper->_flashMessenger($msg, 'info');
+                } else {
+                    $this->_helper->_flashMessenger($msg, 'error');
+                }
+            }
+            // Warn in all other cases.
+            else {
+                $this->_helper->_flashMessenger($msg, 'info');
+            }
+
             $this->view->status = 'success';
             $this->view->message = __('%s uploaded successfully', ucfirst($type));
-            $this->_helper->_flashMessenger(__('If "%s" doesn’t appear in the list of %s, its directory may need to be renamed.',
-                $directory, Inflector::pluralize($type)), 'info');
         }
         else {
             $this->view->status = 'error';
@@ -239,5 +381,85 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         }
 
         return $result;
+    }
+
+    /**
+     * Helper to rename the directory of an addon.
+     *
+     * @internal The name of the directory is unknown, because it is a subfolder
+     * inside the zip file.
+     *
+     * @param string $addonName
+     * @return boolean
+     */
+    protected function _moveAddon($addonName, $type)
+    {
+        switch ($type) {
+            case 'webplugin':
+            case 'plugin':
+                $destination = PLUGIN_DIR;
+                break;
+            case 'theme':
+                $destination = PUBLIC_THEME_DIR;
+                break;
+            default:
+                return false;
+        }
+
+        $name = '';
+        foreach (array(
+                // Manage only the most common cases.
+                array('', ''),
+                array('', '-master'),
+                array('', '-plugin-master'),
+                array('', '-theme-master'),
+                array('', '4Omeka-master'),
+                array('omeka-', '-master'),
+                array('plugin-', '-master'),
+                array('omeka-plugin-', '-master'),
+                array('theme-', '-master'),
+                array('omeka-theme-', '-master'),
+                array('omeka_', '-master'),
+                array('omeka_plugin_', '-master'),
+                array('omeka_theme_', '-master'),
+                array('omeka_Plugin_', '-master'),
+                array('omeka_Theme_', '-master'),
+            ) as $array) {
+            $checkName = $destination . DIRECTORY_SEPARATOR
+                . $array[0] . $addonName . $array[1];
+            if (file_exists($checkName)) {
+                $name = $checkName;
+                break;
+            }
+            $checkName = $destination . DIRECTORY_SEPARATOR
+                . $array[0] . ucfirst(strtolower($addonName)) . $array[1];
+            if (file_exists($checkName)) {
+                $name = $checkName;
+                $addonName = ucfirst(strtolower($addonName));
+                break;
+            }
+            if ($array[0]) {
+                $checkName = $destination . DIRECTORY_SEPARATOR
+                    . ucfirst($array[0]) . $addonName . $array[1];
+                if (file_exists($checkName)) {
+                    $name = $checkName;
+                    break;
+                }
+                $checkName = $destination . DIRECTORY_SEPARATOR
+                    . ucfirst($array[0]) . ucfirst(strtolower($addonName)) . $array[1];
+                if (file_exists($checkName)) {
+                    $name = $checkName;
+                    $addonName = ucfirst(strtolower($addonName));
+                    break;
+                }
+            }
+        }
+
+        if (empty($name)) {
+            return false;
+        }
+
+        $path = $destination . DIRECTORY_SEPARATOR . $addonName;
+        return rename($name, $path);
     }
 }
