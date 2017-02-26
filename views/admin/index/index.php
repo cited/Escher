@@ -22,27 +22,31 @@ echo head(array(
 }
 </style>
 <div class="mapfig-img">
-    <img src="<?php echo url("escher"); ?>/../../plugins/Escher/image/escher-logo.gif" />
+    <img src="<?php echo img('escher-logo.gif'); ?>" />
 </div>
 
-<?php
-if (isset($_GET['success']) && $_GET['success'] == 1) {
-    echo '<p class="escher-success">' . $_GET['msg'] . '</p>';
-} elseif (isset($_GET['error']) && $_GET['error'] == 1) {
-    echo '<p class="escher-error">' . $_GET['msg'] . '</p>';
-}
-?>
-<p>Select Plugin and Click Upload</p>
+<?php if (!empty($_GET['success'])): ?>
+<p class="escher-success"><?php echo $_GET['msg']; ?></p>
+<?php elseif (!empty($_GET['error'])): ?>
+<p class="escher-error"><?php echo $_GET['msg']; ?></p>
+<?php endif; ?>
+
+<p><?php echo __('Select Plugin and Click Upload'); ?></p>
 
 <form action="<?php echo url("escher/index/upload"); ?>" method="post">
-    <p>
-        <select name="plugin-name">
-            <?php foreach ($plugins as $v => $k) { ?>
-                <option value="<?php echo $k; ?>"><?php echo $v; ?></option>
-            <?php } ?>
-        </select>
-    </p>
-    <input type="submit" value="Upload" />
+    <div class="field">
+        <div class="two columns alpha">
+            <?php echo $this->formLabel('plugin-name', __('Plugin Name')); ?>
+        </div>
+        <div class='inputs five columns omega'>
+            <?php
+                $plugins = label_table_options($plugins);
+                echo $this->formSelect('plugin-name', '', array(), $plugins);
+            ?>
+        </div>
+    </div>
+
+    <input type="submit" value="<?php echo __('Upload'); ?>" />
 </form>
 
 <?php echo foot();

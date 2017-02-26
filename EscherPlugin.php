@@ -9,16 +9,12 @@ class EscherPlugin extends Omeka_Plugin_AbstractPlugin
 {
 
     protected $_hooks = array(
-        'define_routes',
         'define_acl'
     );
 
     protected $_filters = array(
         'admin_navigation_main'
     );
-
-    public function hookDefineRoutes($array)
-    {}
 
     public function hookDefineAcl($args)
     {
