@@ -21,6 +21,9 @@ echo head(array(
     border-radius: 4px;
 }
 </style>
+
+<?php echo flash(); ?>
+
 <div class="mapfig-img">
     <img src="<?php echo img('escher-logo.gif'); ?>" />
 </div>

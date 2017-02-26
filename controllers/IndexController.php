@@ -3,37 +3,45 @@
 class Escher_IndexController extends Omeka_Controller_AbstractActionController
 {
 
-    public function init()
-    {}
-
     public function indexAction()
     {
-        // phpinfo();
-        $html = file_get_contents("http://omeka.org/add-ons/plugins/");
-        // echo $html;
+        $plugins = $this->_listPlugins();
+
+        if (empty($plugins)) {
+            $this->_helper->_flashMessenger(__('Unable to fetch plugins from Omeka.org.'), 'error');
+        }
+
+        $this->view->plugins = $plugins;
+    }
+
+    protected function _listPlugins()
+    {
+        $addons = array();
+
+        $source = 'https://omeka.org/add-ons/plugins/';
+
+        $html = file_get_contents($source);
+        if (empty($html)) {
+            return array();
+        }
+
         libxml_use_internal_errors(true);
         $pokemon_doc = new DOMDocument();
         $pokemon_doc->loadHTML($html);
-
         $pokemon_xpath = new DOMXPath($pokemon_doc);
-
         $pokemon_row = $pokemon_xpath->query('//a[@class="omeka-addons-button"]/@href');
-
-        $pluginName = array();
-
         if ($pokemon_row->length > 0) {
             foreach ($pokemon_row as $row) {
-                $n = basename($row->nodeValue);
                 $url = $row->nodeValue;
-                $n = explode('.zip', $n);
-
-                $n = preg_match("/(.*)-[0-9\.]*/", $n[0], $m);
-
-                $pluginName[$m[1]] = $url;
+                $filename = basename(parse_url($url, PHP_URL_PATH));
+                $result = preg_match("/(.*)-([0-9\.]*)\.zip/", $filename, $matches);
+                $name = str_replace('-', ' ', $matches[1]);
+                $version = $matches[2];
+                $addons[$url] = $name . ' [v' . $version . ']';
             }
         }
 
-        $this->view->plugins = $pluginName;
+        return $addons;
     }
 
     public function uploadAction()
@@ -100,6 +108,6 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             echo "something is wrong.";
         }
 
-        exit();
+        $this->render('index');
     }
 }
