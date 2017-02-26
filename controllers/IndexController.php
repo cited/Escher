@@ -11,18 +11,13 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         $this->view->status = '';
         $this->view->message = '';
 
-        $plugins = $this->_listAddons();
+        $plugins = $this->_listAddons('plugin');
         $this->view->plugins = $plugins;
 
-        if (!is_writeable(PLUGIN_DIR)) {
-            $this->_helper->_flashMessenger(__('The plugin directory is not writeable by the server.'), 'error');
-            return;
-        }
+        $themes = $this->_listAddons('theme');
+        $this->view->themes = $themes;
 
-        // Add a message for security hole.
-        $this->_helper->_flashMessenger(__('The plugin directory is writeable by the server: don’t forget to protect it after installation.'), 'info');
-
-        if (empty($plugins)) {
+        if (empty($plugins) && empty($themes)) {
             $this->_helper->_flashMessenger(__('Unable to fetch addons from Omeka.org.'), 'error');
             return;
         }
@@ -37,17 +32,38 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             return;
         }
 
-        $url = $this->getParam('addon');
-        if (!empty($url)) {
-            $this->_installAddon($url, PLUGIN_DIR);
+        $type = 'plugin';
+        $url = $this->getParam('plugin');
+        if (!$url) {
+            $type = 'theme';
+            $url = $this->getParam('theme');
+        }
+
+        if ($url) {
+            $result = $this->_installAddon($url, $type);
         }
     }
 
-    protected function _listAddons()
+    /**
+     * Helper to list the addons from a web page.
+     *
+     * @param string $type
+     * @return array
+     */
+    protected function _listAddons($type)
     {
         $addons = array();
 
-        $source = 'https://omeka.org/add-ons/plugins/';
+        switch ($type) {
+            case 'plugin':
+                $source = 'https://omeka.org/add-ons/plugins/';
+                break;
+            case 'theme':
+                $source = 'https://omeka.org/add-ons/themes/';
+                break;
+            default:
+                return array();
+        }
 
         $html = file_get_contents($source);
         if (empty($html)) {
@@ -63,9 +79,11 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             foreach ($pokemon_row as $row) {
                 $url = $row->nodeValue;
                 $filename = basename(parse_url($url, PHP_URL_PATH));
-                $result = preg_match("/(.*)-([0-9\.]*)\.zip/", $filename, $matches);
-                $name = str_replace('-', ' ', $matches[1]);
-                $version = $matches[2];
+                list($name, $version) = $this->_extractNameAndVersion($filename);
+                if (empty($name)) {
+                    continue;
+                }
+                $name = str_replace('-', ' ', $name);
                 $addons[$url] = $name . ' [v' . $version . ']';
             }
         }
@@ -74,15 +92,56 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
     }
 
     /**
+     * Helper to extract the name and the version from the name of a zip file.
+     *
+     * @param string $filename
+     * @return array
+     */
+    protected function _extractNameAndVersion($filename)
+    {
+        // Some plugins have "-" in name; some have letters in version.
+        $result = preg_match('~([^\d]+)\-(\d.*)\.zip~', $filename, $matches);
+        // Manage for example "Select2".
+        if (empty($matches)) {
+            $result = preg_match('~(.*?)\-(\d.*)\.zip~', $filename, $matches);
+        }
+        if (empty($matches)) {
+            return array(null, null);
+        }
+        $name = $matches[1];
+        $version = $matches[2];
+        return array($name, $version);
+    }
+
+    /**
      * Helper to install an addon.
      *
      * @param string $source
-     * @param string $destination
+     * @param string $type
      * @return boolean
      */
-    protected function _installAddon($source, $destination)
+    protected function _installAddon($source, $type)
     {
-        // Get the local zip file path.
+        switch ($type) {
+            case 'plugin':
+                $destination = PLUGIN_DIR;
+                break;
+            case 'theme':
+                $destination = PUBLIC_THEME_DIR;
+                break;
+            default:
+                return false;
+        }
+
+        $isWriteableDestination = is_writeable($destination);
+        if (!$isWriteableDestination) {
+            $this->_helper->_flashMessenger(__('The %s directory is not writeable by the server.', $type), 'error');
+            return;
+        }
+        // Add a message for security hole.
+        $this->_helper->_flashMessenger(__('Don’t forget to protect the %s directory from writing after installation.', $type), 'info');
+
+            // Get the local zip file path.
         $filename = basename(parse_url($source, PHP_URL_PATH));
         $zipFile = $destination . DIRECTORY_SEPARATOR . $filename;
 
@@ -91,14 +150,14 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
             $result = @unlink($zipFile);
             if (!$result) {
                 $this->view->status = 'error';
-                $this->view->message = __('A zipfile exists with the same name in the addon directory and cannot be removed.');
+                $this->view->message = __('A zipfile exists with the same name in the %s directory and cannot be removed.', $type);
                 return false;
             }
         }
 
         // Get plugin directory name without version number.
-        $result = preg_match("/(.*)-([0-9\.]*)\.zip/", $filename, $matches);
-        $directory = Inflector::camelize($matches[1]);
+        list($name, $version) = $this->_extractNameAndVersion($filename);
+        $directory = Inflector::camelize($name);
         if (file_exists($destination . DIRECTORY_SEPARATOR . $directory)) {
             $this->view->status = 'error';
             $this->view->message = __('The addon directory already exists.');
@@ -109,7 +168,7 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         $result = $this->_downloadFile($source, $zipFile);
         if (!$result) {
             $this->view->status = 'error';
-            $this->view->message = __('Unable to fetch the addon.');
+            $this->view->message = __('Unable to fetch the %s.', $type);
             return false;
         }
 
@@ -120,8 +179,9 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
 
         if ($result) {
             $this->view->status = 'success';
-            $this->view->message = __('Plugin uploaded successfully');
-            $this->_helper->_flashMessenger(__('If "%s" doesn’t appear in the list of addons, its directory may need to be renamed.', $directory), 'info');
+            $this->view->message = __('%s uploaded successfully', ucfirst($type));
+            $this->_helper->_flashMessenger(__('If "%s" doesn’t appear in the list of %s, its directory may need to be renamed.',
+                $directory, Inflector::pluralize($type)), 'info');
         }
         else {
             $this->view->status = 'error';

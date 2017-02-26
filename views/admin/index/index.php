@@ -34,24 +34,39 @@ echo head(array(
 <p class="escher-error"><?php echo $this->message; ?></p>
 <?php endif; ?>
 
-<p><?php echo __('Select Plugin and Click Upload'); ?></p>
+<p><?php echo __('Select Addon and Click Upload'); ?></p>
 
 <form action="<?php echo url("escher"); ?>" method="post">
     <div class="field">
         <div class="two columns alpha">
-            <?php echo $this->formLabel('addon', __('Plugin Name')); ?>
+            <?php echo $this->formLabel('plugin', __('Plugin Name')); ?>
         </div>
         <div class='inputs five columns omega'>
             <?php
                 $plugins = label_table_options($plugins);
-                echo $this->formSelect('addon', '', array(), $plugins);
+                echo $this->formSelect('plugin', '', array(), $plugins);
+            ?>
+        </div>
+    </div>
+    <div class="field">
+        <div class="two columns alpha">
+            <?php echo $this->formLabel('theme', __('Theme Name')); ?>
+        </div>
+        <div class='inputs five columns omega'>
+            <?php
+                $themes = label_table_options($themes);
+                echo $this->formSelect('theme', '', array(), $themes);
             ?>
         </div>
     </div>
 
     <?php echo $csrf; ?>
 
-    <input type="submit" value="<?php echo __('Upload'); ?>" />
+    <div class="field">
+        <div class='inputs five columns omega'>
+            <input type="submit" value="<?php echo __('Upload'); ?>" />
+        </div>
+    </div>
 </form>
 
 <?php echo foot();
