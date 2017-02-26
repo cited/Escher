@@ -1,16 +1,16 @@
 <?php
 
-class Escher_IndexController extends Omeka_Controller_AbstractActionController {
+class Escher_IndexController extends Omeka_Controller_AbstractActionController
+{
 
-    public function init() {
-        
-    }
+    public function init()
+    {}
 
-    public function indexAction() {
-        //phpinfo();
-
+    public function indexAction()
+    {
+        // phpinfo();
         $html = file_get_contents("http://omeka.org/add-ons/plugins/");
-        //echo $html;
+        // echo $html;
         libxml_use_internal_errors(true);
         $pokemon_doc = new DOMDocument();
         $pokemon_doc->loadHTML($html);
@@ -36,28 +36,30 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController {
         $this->view->plugins = $pluginName;
     }
 
-    public function uploadAction() {
-
+    public function uploadAction()
+    {
         $pluginName = $_POST['plugin-name'];
         $pluginDir = __DIR__ . '/../';
 
         $url = $pluginName;
         $filename = basename($pluginName);
         $zipFile = $pluginDir . $filename; // Local Zip File Path
-        //get plugin directory name without version number
+                                           // get plugin directory name without version number
         $pName = explode('.zip', $filename);
         preg_match("/(.*)-[0-9\.]*/", $pName[0], $m);
-        
+
         $pName = str_replace('-', '', $m[1]);
-        if (file_exists($pluginDir . '../' . $pName)){
-            header("location:" . url("escher?error=1&msg=Plugin directory already exists.")); exit;
+        if (file_exists($pluginDir . '../' . $pName)) {
+            header("location:" . url("escher?error=1&msg=Plugin directory already exists."));
+            exit();
         }
+
+        $file = file_get_contents($url);
 
         // create empty zip file.
         $zip = new ZipArchive();
         $zip->open($zipFile, ZipArchive::CREATE);
         $zip->close();
-
 
         $zipResource = fopen($zipFile, "w");
 
@@ -75,13 +77,13 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController {
         curl_setopt($ch, CURLOPT_FILE, $zipResource);
         $page = curl_exec($ch);
 
-        if (!$page) {
+        if (! $page) {
             echo "Error :- " . curl_error($ch);
         }
 
         curl_close($ch);
 
-        $zip = new ZipArchive;
+        $zip = new ZipArchive();
         $res = $zip->open($zipFile);
 
         if ($res === TRUE) {
@@ -90,17 +92,14 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController {
             $zip->close();
 
             unlink($zipFile);
-            
-            
+
             header("location:" . url("escher?success=1&msg=Plugin uploaded successfully."));
-            
         } else {
 
             unlink($zipFile);
             echo "something is wrong.";
         }
 
-        exit;
+        exit();
     }
-
 }

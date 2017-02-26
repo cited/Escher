@@ -1,23 +1,29 @@
 <?php
-echo head(array('title' => 'Escher', 'bodyclass' => 'escher browse'));
+echo head(array(
+    'title' => 'Escher',
+    'bodyclass' => 'escher browse'
+));
 ?>
 <style>
-    .escher-success{
-        background: #3c763d;
-        padding: 10px;
-        color: #fff;   
-        border: 1px solid transparent;
-        border-radius: 4px;
-    }
-    .escher-error{
-        background: #a94442;
-        padding: 10px;
-        color: #fff;  
-        border: 1px solid transparent;
-        border-radius: 4px;
-    }
+.escher-success {
+    background: #3c763d;
+    padding: 10px;
+    color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.escher-error {
+    background: #a94442;
+    padding: 10px;
+    color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
 </style>
-<div class="mapfig-img"><img src="<?php echo url("escher"); ?>/../../plugins/Escher/image/escher-logo.gif" /></div>
+<div class="mapfig-img">
+    <img src="<?php echo url("escher"); ?>/../../plugins/Escher/image/escher-logo.gif" />
+</div>
 
 <?php
 if (isset($_GET['success']) && $_GET['success'] == 1) {
@@ -36,8 +42,7 @@ if (isset($_GET['success']) && $_GET['success'] == 1) {
             <?php } ?>
         </select>
     </p>
-    <input type="submit" value="Upload"/>
+    <input type="submit" value="Upload" />
 </form>
 
-
-<?php echo foot(); ?>
+<?php echo foot();
