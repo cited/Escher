@@ -12,6 +12,12 @@ echo head(array(
 
 <h4><?php echo __('Select Addon and Click Upload'); ?></h4>
 <p class="explanation">
+    <?php echo __('For more information on addons, see the pages %splugins%s and %sthemes%s or on %sOmeka.org%s.',
+        '<a href="https://daniel-km.github.io/UpgradeToOmekaS/omeka_plugins.html">', '</a>',
+        '<a href="https://daniel-km.github.io/UpgradeToOmekaS/omeka_themes.html">', '</a>',
+        '<a href="https://omeka.org/add-ons">', '</a>'); ?>
+</p>
+<p class="explanation">
     <?php echo _('Addons with an asterisk are already downloaded.'); ?>
 </p>
 

@@ -4,6 +4,8 @@ Escher (plugin for Omeka)
 [Escher] is a plugin for [Omeka Classic] that allows to install Omeka plugins
 and themes from https://omeka.org and from the web (https://github.com and https://gitlab.com).
 
+For more information on addons, see the pages [plugins] and [themes], or on [Omeka.org].
+
 
 Installation
 ------------
@@ -73,6 +75,9 @@ Copyright
 [Escher]: https://github.com/AcuGIS/Escher
 [Omeka]: https://www.omeka.org
 [Omeka Classic]: https://omeka.org
+[plugins]: https://daniel-km.github.io/UpgradeToOmekaS/omeka_plugins.html
+[themes]: https://daniel-km.github.io/UpgradeToOmekaS/omeka_themes.html
+[Omeka.org]: https://omeka.org/add-ons
 [plugin issues]: https://forum.omeka.org
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [AcuGIS]: https://www.acugis.com
