@@ -27,7 +27,7 @@ class Escher_Form_Upload extends Omeka_Form
             'theme' => __('Themes'),
         );
 
-        $list = $addons->list();
+        $list = $addons->addonList();
         foreach($list as $addonType => $addonsForType) {
             if (empty($addonsForType)) {
                 continue;
