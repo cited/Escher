@@ -77,7 +77,7 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
      *
      * @return string
      */
-    public function list()
+    public function addonList()
     {
         // Build the list of addons only once.
         if (!$this->isEmpty()) {
