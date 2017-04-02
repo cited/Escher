@@ -223,8 +223,7 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
 
             $url = $row[$headers['Url']];
             $name = $row[$headers['Name']];
-            $version = $row[$headers['Last']];
-            $name = $row[$headers['Name']];
+            $version = $row[$headers['Last Version']];
             $addonName = preg_replace('~[^A-Za-z0-9]~', '', $name);
             $server = strtolower(parse_url($url, PHP_URL_HOST));
             switch ($server) {
