@@ -18,7 +18,7 @@ Usage
 
 As shown below, simply select the desired plugin or theme and click "upload"
 
-![Escher](https://www.acugis.com/blogs/wp-content/uploads/2016/05/Escher.gif)
+![Escher](https://www.acugis.com/img/Escher-2.3.1.gif)
 
 
 Warning
