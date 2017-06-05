@@ -68,7 +68,7 @@ Current maintainers:
 Copyright
 ---------
 
-* Copyright AcuGIS, 2016
+* Copyright AcuGIS, 2017
 * Copyright Daniel Berthereau, 2017
 
 
