@@ -187,7 +187,7 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
         }
         $source = $this->data[$type]['source'];
 
-        $content = @file_get_contents($source);
+        $content = $this->fileGetContents($source);
         if (empty($content)) {
             return array();
         }
@@ -200,6 +200,40 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
             case 'omekatheme':
                 return $this->extractAddonListFromOmeka($content, $type);
         }
+    }
+
+    /**
+     * Helper to get content from an external url.
+     *
+     * @param string $url
+     * @return string
+     */
+    protected function fileGetContents($url)
+    {
+        if (ini_get('allow_url_fopen') && ini_get('allow_url_include')) {
+            return @file_get_contents($url);
+        }
+
+        $userAgent = 'Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox';
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+        if (curl_errno($ch) || $response === false) {
+            _log(
+                '[Escher]:'
+                    . ' ' . __('Unable to fetch the url %s.', $url)
+                    . ' ' . __('You should enable "allow_url_fopen" and "allow_url_include" in php.ini.')
+                    . ' ' . curl_error($ch),
+                Zend_Log::WARN);
+            $response = null;
+        }
+        curl_close($ch);
+        return $response;
     }
 
     /**
@@ -231,10 +265,10 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
                     $zip = $url . '/archive/master.zip';
                     break;
                 case 'gitlab.com':
-                    $zip = $url .'/repository/archive.zip';
+                    $zip = $url . '/repository/archive.zip';
                     break;
                 default:
-                    $zip = $url .'/master.zip';
+                    $zip = $url . '/master.zip';
                     break;
             }
 
