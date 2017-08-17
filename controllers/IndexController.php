@@ -312,11 +312,11 @@ class Escher_IndexController extends Omeka_Controller_AbstractActionController
         // fails with a "Permission Denied" error because the current working
         // directory cannot be set properly via exec().  Note that exec() works
         // fine when executing in the web environment but fails in CLI.
-        $descriptorSpec = [
+        $descriptorSpec = array(
             0 => array('pipe', 'r'), //STDIN
             1 => array('pipe', 'w'), //STDOUT
             2 => array('pipe', 'w'), //STDERR
-        ];
+        );
         if ($proc = proc_open($command, $descriptorSpec, $pipes, getcwd())) {
             $output = stream_get_contents($pipes[1]);
             $errors = stream_get_contents($pipes[2]);
