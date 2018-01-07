@@ -15,7 +15,7 @@ echo head(array(
     <?php echo __('For more information on addons, see the pages %splugins%s and %sthemes%s or on %sOmeka.org%s.',
         '<a href="https://daniel-km.github.io/UpgradeToOmekaS/omeka_plugins.html">', '</a>',
         '<a href="https://daniel-km.github.io/UpgradeToOmekaS/omeka_themes.html">', '</a>',
-        '<a href="https://omeka.org/add-ons">', '</a>'); ?>
+        '<a href="https://omeka.org/classic">', '</a>'); ?>
 </p>
 <p class="explanation">
     <?php echo _('Addons with an asterisk are already downloaded.'); ?>

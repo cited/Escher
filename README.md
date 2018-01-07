@@ -26,8 +26,8 @@ Warning
 
 Use it at your own risk.
 
-It’s always recommended to backup your files and database regularly so you can
-roll back if needed.
+It’s always recommended to backup your files and your databases and to check
+your archives regularly so you can roll back if needed.
 
 
 Troubleshooting
@@ -69,7 +69,7 @@ Copyright
 ---------
 
 * Copyright AcuGIS, 2017
-* Copyright Daniel Berthereau, 2017
+* Copyright Daniel Berthereau, 2017-2018
 
 
 [Escher]: https://github.com/AcuGIS/Escher
