@@ -24,11 +24,11 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
      */
     protected $data = array(
         'omekaplugin' => array(
-            'source' => 'https://omeka.org/add-ons/plugins/',
+            'source' => 'https://omeka.org/classic/plugins/',
             'destination' => PLUGIN_DIR,
         ),
         'omekatheme' => array(
-            'source' => 'https://omeka.org/add-ons/themes/',
+            'source' => 'https://omeka.org/classic/themes/',
             'destination' => PUBLIC_THEME_DIR,
         ),
         'plugin' => array(
@@ -300,58 +300,69 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
 
         libxml_use_internal_errors(true);
         $pokemon_doc = new DOMDocument();
-        $pokemon_doc->loadHTML($html);
+        $result = $pokemon_doc->loadHTML($html);
         $pokemon_xpath = new DOMXPath($pokemon_doc);
-        $pokemon_row = $pokemon_xpath->query('//a[@class="omeka-addons-button"]/@href');
-        if ($pokemon_row->length > 0) {
-            foreach ($pokemon_row as $row) {
-                $url = $row->nodeValue;
-                $filename = basename(parse_url($url, PHP_URL_PATH));
-                list($name, $version) = $this->_extractNameAndVersion($filename);
-                if (empty($name)) {
-                    continue;
-                }
 
-                $addonName = preg_replace('~[^A-Za-z0-9]~', '', $name);
-                $server = strtolower(parse_url($url, PHP_URL_HOST));
-                $zip = $url;
+        // New format is the one of Github: /TagVersion/NameGivenByAuthor.zip.
+        switch ($type) {
+            case 'omekaplugin':
+                $query = '//div[@id="module-list"]/div[@class="module"]/div[@class="download"]/a[@class="button"]/@href';
+                break;
+            case 'omekatheme':
+                $query = '//div[@id="theme-list"]/div[@class="theme"]/div[@class="download"]/a[@class="button"]/@href';
+                break;
+            default:
+                return [];
+        }
 
-                $addon = array();
-                $addon['type'] = $type;
-                $addon['name'] = str_replace(array('-', '_'), ' ', $name);
-                $addon['basename'] = $addonName;
-                $addon['dir'] = $addonName;
-                $addon['version'] = $version;
-                $addon['zip'] = $zip;
-                $addon['server'] = $server;
-
-                $list[$url] = $addon;
+        $pokemon_row = $pokemon_xpath->query($query);
+        if ($pokemon_row->length <= 0) {
+            // Check if the site is still broken.
+            $html = str_replace('</footer>', '</nav></footer>', $html);
+            $pokemon_doc = new DOMDocument();
+            $result = $pokemon_doc->loadHTML($html);
+            $pokemon_xpath = new DOMXPath($pokemon_doc);
+            $pokemon_row = $pokemon_xpath->query($query);
+            if ($pokemon_row->length <= 0) {
+                return array();
             }
         }
 
-        return $list;
-    }
+        foreach ($pokemon_row as $row) {
+            $url = $row->nodeValue;
+            $filename = basename(parse_url($url, PHP_URL_PATH));
+            $query = '//a[@href="' . $url . '"]/../../div/h4/a';
+            $name_row = $pokemon_xpath->query($query);
+            if (empty($name_row)) {
+                continue;
+            }
+            $name = $name_row->item(0)->nodeValue;
 
-    /**
-     * Helper to extract the name and the version from the name of a zip file.
-     *
-     * @param string $filename
-     * @return array
-     */
-    protected function _extractNameAndVersion($filename)
-    {
-        // Some addons have "-" in name; some have letters in version.
-        $result = preg_match('~([^\d]+)\-(\d.*)\.zip~', $filename, $matches);
-        // Manage for example "Select2".
-        if (empty($matches)) {
-            $result = preg_match('~(.*?)\-(\d.*)\.zip~', $filename, $matches);
+            $query = '//a[@href="' . $url . '"]/../span[@class="version"]';
+            $version_row = $pokemon_xpath->query($query);
+            $version = $version_row->item(0)->nodeValue;
+            $version = trim(str_replace('Latest Version:', '', $version));
+
+            $query = '//a[@href="' . $url . '"]/../../div/h4/a/@href';
+            $addon_row = $pokemon_xpath->query($query);
+            $addonName = $addon_row->item(0)->nodeValue;
+
+            $server = strtolower(parse_url($url, PHP_URL_HOST));
+            $zip = $url;
+
+            $addon = array();
+            $addon['type'] = $type;
+            $addon['name'] = $name;
+            $addon['basename'] = $addonName;
+            $addon['dir'] = $addonName;
+            $addon['version'] = $version;
+            $addon['zip'] = $zip;
+            $addon['server'] = $server;
+
+            $list[$url] = $addon;
         }
-        if (empty($matches)) {
-            return array(null, null);
-        }
-        $name = $matches[1];
-        $version = $matches[2];
-        return array($name, $version);
+
+        return $list;
     }
 
     /**
