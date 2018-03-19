@@ -46,14 +46,14 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
      *
      * @var integer
      */
-    protected $expirationSeconds = 86400;
+    protected $expirationSeconds = 3600;
 
     /**
      * Expiration hops.
      *
      * @var integer
      */
-    protected $expirationHops = 50;
+    protected $expirationHops = 10;
 
     /**
      * Cache for the list of addons.
