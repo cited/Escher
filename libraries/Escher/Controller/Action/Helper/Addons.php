@@ -32,11 +32,11 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
             'destination' => PUBLIC_THEME_DIR,
         ),
         'plugin' => array(
-            'source' => 'https://raw.githubusercontent.com/Daniel-KM/UpgradeToOmekaS/master/docs/_data/omeka_plugins.csv',
+            'source' => 'https://raw.githubusercontent.com/Daniel-KM/UpgradeToOmekaS/master/_data/omeka_plugins.csv',
             'destination' => PLUGIN_DIR,
         ),
         'theme' => array(
-            'source' => 'https://raw.githubusercontent.com/Daniel-KM/UpgradeToOmekaS/master/docs/_data/omeka_themes.csv',
+            'source' => 'https://raw.githubusercontent.com/Daniel-KM/UpgradeToOmekaS/master/_data/omeka_themes.csv',
             'destination' => PUBLIC_THEME_DIR,
         ),
     );
@@ -46,14 +46,14 @@ class Escher_Controller_Action_Helper_Addons extends Zend_Controller_Action_Help
      *
      * @var integer
      */
-    protected $expirationSeconds = 86400;
+    protected $expirationSeconds = 3600;
 
     /**
      * Expiration hops.
      *
      * @var integer
      */
-    protected $expirationHops = 50;
+    protected $expirationHops = 10;
 
     /**
      * Cache for the list of addons.
